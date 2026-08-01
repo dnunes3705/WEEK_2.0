@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environments
+.venv/
+venv/
+env/
+.env
+
+# Data (keep placeholders)
+data/**
+!data/**/.gitkeep
+
+# Models/artifacts (keep placeholders)
+models/**
+!models/**/.gitkeep
+

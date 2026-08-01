@@ -1,0 +1,102 @@
+UrbanCart Retention EDA ? Data Quality Check (Processed Datasets)
+Generated on: 2026-08-01
+
+============================================================
+File: data\processed\urbancart_orders_enriched.csv
+Dataset: orders_enriched
+Rows: 73,022
+Duplicate key rows (by primary key): 0
+
+Missing Values
+- No missing values detected (empty strings) in any column.
+
+Validation / Consistency Issues
+- No rule violations detected.
+
+Date Ranges
+- order_date: 2024-01-02 to 2026-04-14
+- signup_date: 2024-01-01 to 2026-03-31
+
+Numeric Ranges (min, max)
+- items_count: 1.0 to 24.0
+- order_value_usd: 8.08 to 342.21
+- discount_amount_usd: 0.0 to 55.8
+- promised_time_min: 15.0 to 90.0
+- actual_time_min: 10.0 to 188.0
+- delay_minutes: 0.0 to 130.0
+- order_year: 2024.0 to 2026.0
+- order_dayofweek: 0.0 to 6.0
+- days_since_signup: 0.0 to 831.0
+- discount_pct: 0.0 to 0.250219
+- customer_rating: 1.0 to 5.0
+
+Categorical Value Check (top values)
+- vendor_category: 4 unique; top=[('Restaurant', 36580), ('Grocery', 21909), ('Pharmacy', 7293), ('Retail', 7240)]
+- delivery_type: 3 unique; top=[('On-Demand', 43981), ('Scheduled', 18145), ('Express', 10896)]
+- promo_used: 2 unique; top=[('No', 42878), ('Yes', 30144)]
+- is_promo_used: 2 unique; top=[('No', 42878), ('Yes', 30144)]
+- delivery_status: 2 unique; top=[('On-Time', 55137), ('Delayed', 17885)]
+- order_accuracy: 3 unique; top=[('Correct', 67228), ('Partial', 4335), ('Wrong', 1459)]
+- is_delayed: 2 unique; top=[('No', 55137), ('Yes', 17885)]
+- delay_bucket: 4 unique; top=[('On-Time', 55137), ('11-30', 11880), ('1-10', 3103), ('31+', 2902)]
+- is_inaccurate: 2 unique; top=[('No', 67228), ('Yes', 5794)]
+- is_low_rating: 2 unique; top=[('No', 51787), ('Yes', 21235)]
+- rating_bucket: 4 unique; top=[('5', 28661), ('4', 23126), ('3', 13790), ('1-2', 7445)]
+- is_weekend: 2 unique; top=[('No', 52204), ('Yes', 20818)]
+- order_month: 28 unique; top=[('2026-03', 3908), ('2026-01', 3661), ('2025-12', 3611), ('2025-10', 3538), ('2025-11', 3524), ('2025-09', 3445)]
+
+============================================================
+File: data\processed\urbancart_customers_features.csv
+Dataset: customers_features
+Rows: 5,000
+Duplicate key rows (by primary key): 0
+
+Missing Values
+- Columns with missing values: 1/31
+  - days_to_second_order: 81 missing
+
+Validation / Consistency Issues
+- rule:retention_ineligible_flagged: 519 rows
+    example: eligible_90d=No but retained_90d=Yes
+    example: eligible_90d=No but retained_90d=Yes
+    example: eligible_90d=No but retained_90d=Yes
+    example: eligible_90d=No but retained_90d=Yes
+    example: eligible_30d=No but retained_30d=Yes; eligible_90d=No but retained_90d=Yes
+
+Date Ranges
+- signup_date: 2024-01-01 to 2026-03-31
+- first_order_date: 2024-01-02 to 2026-04-06
+- last_order_date: 2024-01-15 to 2026-04-14
+
+Numeric Ranges (min, max)
+- days_active: 0.0 to 828.0
+- orders_total: 1.0 to 126.0
+- avg_order_value_usd: 12.39 to 167.46
+- avg_items_count: 1.0 to 24.0
+- promo_order_share: 0.0 to 1.0
+- avg_discount_amount_usd: 0.0 to 22.075
+- delayed_order_share: 0.0 to 1.0
+- median_delay_minutes: 0.0 to 66.0
+- p90_delay_minutes: 0.0 to 68.4
+- inaccurate_order_share: 0.0 to 1.0
+- avg_customer_rating: 1.0 to 5.0
+- low_rating_share: 0.0 to 1.0
+- orders_first_7d: 1.0 to 8.0
+- orders_first_14d: 1.0 to 10.0
+- unique_vendors_first_14d: 1.0 to 9.0
+- unique_categories_first_14d: 1.0 to 4.0
+
+Categorical Value Check (top values)
+- city: 12 unique; top=[('Houston', 461), ('Phoenix', 452), ('Los Angeles', 442), ('Austin', 435), ('Dallas', 423), ('San Jose', 420)]
+- state: 8 unique; top=[('TX', 1319), ('CA', 1280), ('AZ', 452), ('IL', 398), ('MA', 395), ('NY', 391)]
+- age_group: 5 unique; top=[('26-35', 1751), ('36-45', 1207), ('18-25', 803), ('46-55', 757), ('56+', 482)]
+- gender: 3 unique; top=[('Female', 2484), ('Male', 2370), ('Other', 146)]
+- customer_segment: 3 unique; top=[('Regular', 2905), ('Premium', 1053), ('New', 1042)]
+- preferred_device: 2 unique; top=[('Mobile App', 3863), ('Web', 1137)]
+- retained_30d: 2 unique; top=[('Yes', 4025), ('No', 975)]
+- retained_90d: 2 unique; top=[('Yes', 4817), ('No', 183)]
+- eligible_30d: 2 unique; top=[('Yes', 4855), ('No', 145)]
+- eligible_90d: 2 unique; top=[('Yes', 4481), ('No', 519)]
+
+============================================================
+End of report

@@ -1,0 +1,49 @@
+UrbanCart Retention EDA — Data Cleaning Notes (Processed Datasets)
+Generated on: 2026-08-01
+
+Inputs (unchanged):
+- data/processed/urbancart_orders_enriched.csv
+- data/processed/urbancart_customers_features.csv
+
+Outputs (cleaned; safe to use for descriptive analysis + hypothesis testing):
+- data/processed/urbancart_orders_enriched_clean.csv
+- data/processed/urbancart_customers_features_clean.csv
+
+----------------------------------------------------------------------
+What was cleaned / standardized
+----------------------------------------------------------------------
+1) Order-level dataset (urbancart_orders_enriched_clean.csv)
+- Normalized Yes/No flags:
+  - promo_used and is_promo_used are standardized to Yes/No consistently.
+- Recomputed/standardized engineered fields to match source columns:
+  - discount_pct = discount_amount_usd / order_value_usd (0 if order_value_usd = 0)
+  - delay_minutes corrected to max(actual_time_min - promised_time_min, 0) when inconsistent
+  - delivery_status set to On-Time if delay_minutes=0 else Delayed
+  - is_delayed, delay_bucket recomputed from delay_minutes
+  - is_inaccurate recomputed from order_accuracy
+  - rating_bucket and is_low_rating recomputed from customer_rating
+  - order_year, order_month, order_dayofweek, is_weekend recomputed from order_date
+  - days_since_signup recomputed from order_date - signup_date
+
+2) Customer-level dataset (urbancart_customers_features_clean.csv)
+- Rebuilt customer aggregates from the cleaned order-level dataset to ensure consistency.
+- Added explicit flags/fields to prevent common analysis pitfalls:
+  - has_second_order (Yes/No)
+  - retained_30d_observed, retained_90d_observed (Yes/No): observed repeat within window
+- Fixed retention label censoring (right-censoring):
+  - eligible_30d and eligible_90d recomputed based on max observed order date in the dataset.
+  - retained_30d and retained_90d are now “censoring-safe” labels:
+    - Yes if a repeat was observed within the window (even if not eligible for full follow-up)
+    - No only if the customer is eligible for the full window and no repeat was observed
+    - Blank if the customer is not eligible and no repeat was observed (unknown outcome)
+
+Expected blanks (not data errors)
+- days_to_second_order is blank for customers with only 1 order (81 customers).
+- retained_30d is blank for some ineligible customers with no observed repeat (51 customers).
+- retained_90d is blank for some ineligible customers with no observed repeat (75 customers).
+
+Recommendation for analysis
+- For retention rate KPIs and hypothesis tests using retained_30d / retained_90d:
+  - Filter to eligible_30d=Yes (or eligible_90d=Yes) when you need a strict Yes/No label.
+  - If you want to include early “Yes” signals from ineligible customers, use retained_*_observed.
+

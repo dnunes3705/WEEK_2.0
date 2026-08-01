@@ -1,0 +1,167 @@
+UrbanCart Retention EDA — Data Dictionary + Hypothesis Coverage Review
+Generated on: 2026-07-30
+
+Location reviewed: data/raw/
+Files found:
+- customers.csv
+- orders.csv
+- deliveries.csv
+
+----------------------------------------------------------------------
+1) Dataset Overview (How to Join / Intended Grain)
+----------------------------------------------------------------------
+customers.csv
+- Grain: 1 row per customer
+- Primary key: customer_id
+
+orders.csv
+- Grain: 1 row per order
+- Primary key: order_id
+- Foreign key: customer_id -> customers.customer_id
+
+deliveries.csv
+- Grain: 1 row per delivery (appears to be 1:1 with orders)
+- Primary key: delivery_id
+- Foreign key: order_id -> orders.order_id
+
+Join recommendation for analysis dataset:
+- Start from orders.csv (order-level behavioral + commercial features)
+- Left join deliveries.csv on order_id (service/experience features)
+- Left join customers.csv on customer_id (customer demographics/segments + geography)
+
+Integrity checks (from file scan):
+- All order_id values in orders.csv exist in deliveries.csv, and vice versa (no missing deliveries for orders).
+- All customer_id values in orders.csv exist in customers.csv, and vice versa (all customers have ≥1 order).
+
+----------------------------------------------------------------------
+2) customers.csv (Customer Attributes)
+----------------------------------------------------------------------
+Row count: 5,000
+Date coverage:
+- signup_date: 2024-01-01 to 2026-03-31
+
+Columns:
+- customer_id (string): Unique customer identifier.
+- signup_date (date): Customer signup date.
+- city (string): Customer city (examples: New York, Los Angeles, Chicago, Houston).
+- state (string): Customer state abbreviation (examples: NY, CA, IL, TX).
+- age_group (string): Age bucket (values observed: 18-25, 26-35, 36-45, 46-55, 56+).
+- gender (string): Gender (values observed: Female, Male, Other).
+- customer_segment (string): Segment label (values observed: New, Regular, Premium).
+- preferred_device (string): Primary device/channel (values observed: Mobile App, Web).
+
+Notes / considerations:
+- No missing values observed in this file.
+- customer_segment definition is not provided (how “New/Regular/Premium” is assigned is unknown).
+
+----------------------------------------------------------------------
+3) orders.csv (Order Behavior + Commercial Features)
+----------------------------------------------------------------------
+Row count: 73,022
+Date coverage:
+- order_date: 2024-01-02 to 2026-04-14
+
+Columns:
+- order_id (string): Unique order identifier.
+- customer_id (string): Customer identifier (join key to customers.csv).
+- order_date (date): Order date.
+- vendor_id (string): Vendor identifier (73,022 orders across 200 vendors observed).
+- vendor_category (string): Vendor type (values observed: Restaurant, Grocery, Pharmacy, Retail).
+- delivery_type (string): Service mode (values observed: On-Demand, Scheduled, Express).
+- items_count (integer): Number of items in the order (observed range: 1 to 24).
+- order_value_usd (float): Order subtotal/value in USD (observed range: 8.08 to 342.21).
+- promo_used (boolean-like string): Promotion usage flag (values observed: Yes, No).
+- discount_amount_usd (float): Discount amount in USD (observed range: 0.00 to 55.80).
+
+Notes / considerations:
+- No missing values observed in this file.
+- promo_used is stored as Yes/No (not a true boolean datatype).
+- No explicit fees, tip, taxes, membership/subscription status, acquisition channel, or margin/unit economics fields are present.
+
+----------------------------------------------------------------------
+4) deliveries.csv (Delivery Performance + Experience Signals)
+----------------------------------------------------------------------
+Row count: 73,022
+
+Columns:
+- delivery_id (string): Unique delivery identifier.
+- order_id (string): Order identifier (join key to orders.csv).
+- promised_time_min (integer): Promised delivery time in minutes (observed range: 15 to 90).
+- actual_time_min (integer): Actual delivery time in minutes (observed range: 10 to 188).
+- delay_minutes (integer): Delay minutes relative to promise (observed range: 0 to 130).
+- delivery_status (string): Delivery outcome (values observed: On-Time, Delayed).
+- order_accuracy (string): Fulfillment correctness (values observed: Correct, Partial, Wrong).
+- customer_rating (integer stored as string in file): Rating score (values observed: 1–5).
+
+Notes / considerations:
+- No missing values observed in this file.
+- delivery_status has only On-Time/Delayed; no explicit Cancelled/Returned/Failed statuses observed.
+- order_accuracy can serve as a proxy for fulfillment quality issues, but it does not specify issue type (missing item vs wrong item vs substitution quality).
+
+----------------------------------------------------------------------
+5) Are These Datasets Sufficient to Test the Defined Hypotheses?
+----------------------------------------------------------------------
+Retention label feasibility (needed for all hypotheses)
+- Feasible: Yes.
+  - You can compute retention from orders.csv using order_date per customer.
+  - Two common index choices:
+    - First order date (recommended for behavioral retention).
+    - Signup date (useful if signup precedes first order materially).
+
+Important measurement limitation (right-censoring / follow-up window)
+- The latest order_date is 2026-04-14.
+- To compute 30-day retention without bias, restrict index dates to <= 2026-03-15.
+- To compute 90-day retention without bias, restrict index dates to <= 2026-01-14.
+- If you do not apply a cutoff, late-cohort customers will look artificially “not retained” simply because there is not enough observation time.
+
+Hypothesis 1: Delivery Reliability Drives Retention
+- Testable with current data: Yes.
+- Available fields:
+  - promised_time_min, actual_time_min, delay_minutes, delivery_status
+  - customer_rating (as an outcome/mediator proxy)
+- Suggested metrics:
+  - % delayed deliveries per customer, median delay_minutes per customer, average actual_time_min
+
+Hypothesis 2: Service Failures Reduce Retention
+- Testable with current data: Partially.
+- Available proxies:
+  - delivery_status (Delayed may be an experience failure proxy)
+  - order_accuracy (Partial/Wrong as a fulfillment error proxy)
+  - customer_rating (low ratings as dissatisfaction proxy)
+- Key gaps (not present in any file):
+  - Cancellations/failed deliveries (explicit status or cancellation reason)
+  - Refunds/credits, dispute amounts, chargebacks
+  - Customer support interactions (tickets, chats, calls), resolution time
+  - Item-level issues (missing item vs wrong item), substitution flags/quality (especially for Grocery)
+  - Re-delivery / replacement orders linked to issue resolution
+- Impact of gaps:
+  - You can test whether “Delayed” and “Partial/Wrong” correlate with retention,
+    but you cannot isolate the effect of broader service failures (refunds/support)
+    or distinguish failure types that often drive churn.
+
+Hypothesis 3: Early Engagement Predicts Longer-Term Retention
+- Testable with current data: Yes.
+- Available fields:
+  - order_date by customer_id (for counts in first 7/14 days, time-to-2nd order, etc.)
+  - vendor_category, vendor_id, delivery_type (for early diversity / service-mode behavior)
+- Suggested metrics:
+  - orders_in_first_7d / 14d, days_to_second_order, vendor_count_first_14d, category_mix_first_14d
+
+----------------------------------------------------------------------
+6) Additional Data Gaps (Nice-to-Have for Stronger Insights)
+----------------------------------------------------------------------
+These are not strictly required for the current hypotheses, but would materially improve interpretability/actionability:
+- Pricing details: delivery fee, service fee, taxes, tip, total paid (to evaluate price sensitivity).
+- Promotions: promo type/campaign, acquisition promo vs retention promo, eligibility rules, exposure.
+- Customer tenure & acquisition: acquisition channel/source, referral status, first-touch campaign.
+- Operations: distance/miles, batch/stacked deliveries, courier availability, weather/time-of-day signals.
+- Vendor attributes: vendor ratings, preparation time, stockout rates (grocery), hours/availability.
+- Membership/subscription: subscription status, free delivery thresholds, perks usage.
+
+----------------------------------------------------------------------
+7) Summary
+----------------------------------------------------------------------
+- You have a clean, joinable 3-table dataset (customers + orders + deliveries) with full key coverage.
+- Hypotheses 1 and 3 are fully testable with the existing columns.
+- Hypothesis 2 is only partially testable: you can evaluate delay and order accuracy effects, but you lack explicit cancellation/refund/support and item-level issue data needed to assess “service failures” comprehensively.
+
